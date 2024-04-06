@@ -1,64 +1,37 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
-
-import React from 'react';
-import type {PropsWithChildren} from 'react';
+import React, {useRef} from 'react';
 import {
-  SafeAreaView,
   ScrollView,
   StatusBar,
   StyleSheet,
-  Text,
+  Dimensions,
   useColorScheme,
   View,
 } from 'react-native';
-import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
+import {SafeAreaView, useSafeAreaInsets} from 'react-native-safe-area-context';
+import WebView from 'react-native-webview';
+import type {NavigationFunctionComponent} from 'react-native-navigation';
+import type {ArticleItem} from '#app/models/article';
+import useComponentSize from '#app/hooks/useComponentSize';
+import colors from '#app/assets/styles/colors';
+import HeaderNewsItem from '#app/components/HeaderNewsItem';
 
-type SectionProps = PropsWithChildren<{
-  title: string;
-}>;
+const WINDOW_HEIGHT = Dimensions.get('window').height;
 
-function Section({children, title}: SectionProps): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
-  return (
-    <View style={styles.sectionContainer}>
-      <Text
-        style={[
-          styles.sectionTitle,
-          {
-            color: isDarkMode ? Colors.white : Colors.black,
-          },
-        ]}>
-        {title}
-      </Text>
-      <Text
-        style={[
-          styles.sectionDescription,
-          {
-            color: isDarkMode ? Colors.light : Colors.dark,
-          },
-        ]}>
-        {children}
-      </Text>
-    </View>
-  );
+interface IProps {
+  item: ArticleItem;
 }
 
-function NewsItem(): React.JSX.Element {
+const NewsItem: NavigationFunctionComponent<IProps> = (
+  props,
+): React.JSX.Element => {
+  const {item} = props;
+  const [size, onLayout] = useComponentSize();
+  const insets = useSafeAreaInsets();
   const isDarkMode = useColorScheme() === 'dark';
+  const webViewRef = useRef(null);
 
   const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
+    backgroundColor: isDarkMode ? colors.dark.main : colors.bgLightGrey,
   };
 
   return (
@@ -68,49 +41,52 @@ function NewsItem(): React.JSX.Element {
         backgroundColor={backgroundStyle.backgroundColor}
       />
       <ScrollView
+        scrollEnabled={false}
         contentInsetAdjustmentBehavior="automatic"
         style={backgroundStyle}>
-        <Header />
-        <View
-          style={{
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
-          }}>
-          <Section title="Step One">
-            Edit <Text style={styles.highlight}>App.tsx</Text> to change this
-            screen and then come back to see your edits.
-          </Section>
-          <Section title="See Your Changes">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Learn More">
-            Read the docs to discover what to do next:
-          </Section>
-          <LearnMoreLinks />
+        <View onLayout={onLayout} style={[Styles.headerWrap]}>
+          <HeaderNewsItem item={item} />
         </View>
+        <WebView
+          ref={webViewRef}
+          source={{uri: item?.url}}
+          style={[
+            Styles.webView,
+            isDarkMode ? Styles.webViewDark : null,
+            {
+              height:
+                WINDOW_HEIGHT -
+                insets.bottom -
+                insets.top -
+                (size?.height || 0) -
+                100,
+            },
+          ]}
+          useWebkit={true}
+          contentMode={'mobile'}
+          originWhiteList={['*']}
+          decelerationRate={1.2}
+        />
       </ScrollView>
     </SafeAreaView>
   );
-}
+};
 
-const styles = StyleSheet.create({
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
+const Styles = StyleSheet.create({
+  headerWrap: {
+    marginHorizontal: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 10,
   },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: '600',
+  webView: {
+    flex: 1,
+    backgroundColor: colors.bgLightGrey,
+    borderTopLeftRadius: 10,
+    borderTopRightRadius: 10,
   },
-  sectionDescription: {
-    marginTop: 8,
-    fontSize: 18,
-    fontWeight: '400',
-  },
-  highlight: {
-    fontWeight: '700',
+  webViewDark: {
+    backgroundColor: colors.dark.main,
   },
 });
 
